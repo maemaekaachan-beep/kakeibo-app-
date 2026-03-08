@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>家計簿 📊</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f1923; color: #e8e8e8; font-family: 'Helvetica Neue', sans-serif; min-height: 100vh; }
+    ::-webkit-scrollbar { display: none; }
+
+    /* Header */
+    .header { background: linear-gradient(135deg, #1a2a3a, #0f1923); padding: 16px 18px; border-bottom: 1px solid rgba(100,200,255,0.15); display: flex; align-items: center; gap: 10px; }
+    .header-icon { font-size: 24px; }
+    .header-title { font-size: 18px; font-weight: bold; color: #64c8ff; }
+    .header-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+    /* Tab bar */
+    .tabs { display: flex; background: #0f1923; border-bottom: 1px solid rgba(100,200,255,0.1); }
+    .tab { flex: 1; padding: 12px 4px; text-align: center; font-size: 11px; color: rgba(255,255,255,0.4); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .tab.active { color: #64c8ff; border-bottom-color: #64c8ff; }
+    .tab-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+
+    /* Content */
+    .content { padding: 16px; max-width: 480px; margin: 0 auto; }
+
+    /* Cards */
+    .card { background: linear-gradient(135deg, #1a2a3a, #162030); border: 1px solid rgba(100,200,255,0.15); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+    .card-title { color: #64c8ff; font-size: 11px; letter-spacing: 1px; margin-bottom: 12px; font-weight: bold; }
+
+    /* Summary numbers */
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .summary-item { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 12px; text-align: center; }
+    .summary-label { font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
+    .summary-value { font-size: 20px; font-weight: bold; color: #fff; }
+    .summary-value.income { color: #64ff96; }
+    .summary-value.expense { color: #ff6464; }
+    .summary-value.cashback { color: #ffd764; }
+    .summary-value.invest { color: #a78bfa; }
+
+    /* Recent list */
+    .recent-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .recent-item:last-child { border-bottom: none; }
+    .recent-cat { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .recent-info { flex: 1; min-width: 0; }
+    .recent-content { font-size: 13px; color: #e8e8e8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .recent-detail { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .recent-amount { font-size: 14px; font-weight: bold; color: #ff8c8c; flex-shrink: 0; }
+    .recent-amount.positive { color: #64ff96; }
+
+    /* Monthly table */
+    .monthly-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .monthly-table th { color: rgba(255,255,255,0.5); font-weight: normal; padding: 6px 4px; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .monthly-table th:first-child { text-align: left; }
+    .monthly-table td { padding: 8px 4px; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .monthly-table td:first-child { text-align: left; color: #64c8ff; }
+    .monthly-table tr:last-child td { border-bottom: none; }
+
+    /* Chart container */
+    .chart-wrap { position: relative; height: 200px; margin: 8px 0; }
+
+    /* Loading */
+    .loading { text-align: center; padding: 40px; color: rgba(255,255,255,0.4); }
+    .loading-spinner { font-size: 32px; animation: spin 1s linear infinite; display: inline-block; margin-bottom: 10px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Investment */
+    .invest-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .invest-item:last-child { border-bottom: none; }
+    .invest-name { font-size: 13px; color: #e8e8e8; }
+    .invest-detail { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .invest-profit { font-size: 14px; font-weight: bold; }
+    .invest-profit.plus { color: #64ff96; }
+    .invest-profit.minus { color: #ff6464; }
+    .invest-profit.zero { color: rgba(255,255,255,0.5); }
+
+    /* Refresh button */
+    .refresh-btn { background: rgba(100,200,255,0.1); border: 1px solid rgba(100,200,255,0.3); border-radius: 20px; color: #64c8ff; padding: 6px 14px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; margin-left: auto; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">📊</div>
+  <div>
+    <div class="header-title">家計簿</div>
+    <div class="header-sub">支出・収支を一目でチェック</div>
+  </div>
+  <button class="refresh-btn" onclick="loadAll()">🔄 更新</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('home')"><span class="tab-icon">🏠</span>ホーム</div>
+  <div class="tab" onclick="switchTab('recent')"><span class="tab-icon">📋</span>明細</div>
+  <div class="tab" onclick="switchTab('monthly')"><span class="tab-icon">📅</span>月別</div>
+  <div class="tab" onclick="switchTab('invest')"><span class="tab-icon">📈</span>投資</div>
+</div>
+
+<div class="content">
+  <div id="tab-home"></div>
+  <div id="tab-recent" style="display:none"></div>
+  <div id="tab-monthly" style="display:none"></div>
+  <div id="tab-invest" style="display:none"></div>
+</div>
+
+<script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzoyA7T1ReVTV9RIoQRZwvtYngK-32Mvs0AByN7ZJyqEiAheEPphPxfDoLu65gJJztY/exec";
+
+let recentData = [];
+let monthlyData = [];
+let investData = [];
+let currentTab = 'home';
+let charts = {};
+
+const CAT_ICONS = {
+  "食費": { icon: "🍱", color: "#ff8c64" },
+  "外食費": { icon: "🍜", color: "#ff6496" },
+  "固定費": { icon: "🏠", color: "#6496ff" },
+  "交通費": { icon: "🚃", color: "#64c8ff" },
+  "医療費": { icon: "💊", color: "#ff64c8" },
+  "ペット費": { icon: "🐱", color: "#ffd764" },
+  "日用品": { icon: "🛒", color: "#64ff96" },
+  "その他": { icon: "📦", color: "#a0a0a0" },
+};
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['home','recent','monthly','invest'][i] === tab);
+  });
+  ['home','recent','monthly','invest'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+  currentTab = tab;
+  renderTab(tab);
+}
+
+function fetchDataJsonp(action) {
+  return new Promise((resolve) => {
+    const cbName = 'cb_' + action + '_' + Date.now();
+    window[cbName] = (json) => {
+      delete window[cbName];
+      document.getElementById('jsonp-' + action)?.remove();
+      resolve(json.success ? json.data : []);
+    };
+    const s = document.createElement('script');
+    s.id = 'jsonp-' + action;
+    s.src = GAS_URL + '?action=' + action + '&callback=' + cbName;
+    s.onerror = () => { resolve([]); };
+    document.body.appendChild(s);
+  });
+}
+
+async function loadAll() {
+  showLoading('home');
+  showLoading('recent');
+  showLoading('monthly');
+  showLoading('invest');
+  try {
+    recentData = await fetchDataJsonp('getRecent');
+    monthlyData = await fetchDataJsonp('getMonthly');
+    investData = await fetchDataJsonp('getInvestment');
+  } catch(e) {
+    console.error(e);
+  }
+  renderTab(currentTab);
+  ['home','recent','monthly','invest'].forEach(t => { if (t !== currentTab) renderTab(t); });
+}
+
+function showLoading(tab) {
+  document.getElementById('tab-' + tab).innerHTML = `<div class="loading"><div class="loading-spinner">⚙️</div><div>読み込み中…</div></div>`;
+}
+
+function renderTab(tab) {
+  if (tab === 'home') renderHome();
+  if (tab === 'recent') renderRecent();
+  if (tab === 'monthly') renderMonthly();
+  if (tab === 'invest') renderInvest();
+}
+
+function formatAmount(n) {
+  return Number(n).toLocaleString('ja-JP') + '円';
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const date = new Date(d);
+  if (isNaN(date)) return String(d).substring(0, 10);
+  return (date.getMonth()+1) + '/' + date.getDate();
+}
+
+// ── HOME ──
+function renderHome() {
+  const el = document.getElementById('tab-home');
+  if (!recentData.length) { el.innerHTML = '<div class="loading">データなし</div>'; return; }
+
+  // 今月の集計
+  const now = new Date();
+  const thisMonth = recentData.filter(r => {
+    const d = new Date(r.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+
+  const totalExpense = thisMonth.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const totalCashback = thisMonth.reduce((s, r) => s + (Number(r.cashback) || 0), 0);
+
+  // カテゴリ別
+  const catMap = {};
+  thisMonth.forEach(r => {
+    const cat = r.category || 'その他';
+    catMap[cat] = (catMap[cat] || 0) + (Number(r.amount) || 0);
+  });
+  const catEntries = Object.entries(catMap).sort((a,b) => b[1]-a[1]);
+
+  el.innerHTML = `
+    <div class="fade-in">
+      <div class="card">
+        <div class="card-title">📅 今月の集計（${now.getMonth()+1}月）</div>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="summary-label">支出合計</div>
+            <div class="summary-value expense">${totalExpense.toLocaleString()}<span style="font-size:12px">円</span></div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">還元合計</div>
+            <div class="summary-value cashback">${totalCashback.toLocaleString()}<span style="font-size:12px">円</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🍩 カテゴリ別（今月）</div>
+        <div class="chart-wrap"><canvas id="chart-cat"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🕐 最近の支出</div>
+        ${recentData.slice(-5).reverse().map(r => recentItemHtml(r)).join('')}
+      </div>
+    </div>`;
+
+  // Chart
+  setTimeout(() => {
+    if (charts['cat']) charts['cat'].destroy();
+    const ctx = document.getElementById('chart-cat');
+    if (!ctx || !catEntries.length) return;
+    charts['cat'] = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: catEntries.map(c => c[0]),
+        datasets: [{
+          data: catEntries.map(c => c[1]),
+          backgroundColor: catEntries.map(c => (CAT_ICONS[c[0]] || CAT_ICONS['その他']).color + 'cc'),
+          borderColor: '#0f1923',
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right', labels: { color: '#e8e8e8', font: { size: 10 }, boxWidth: 12 } }
+        }
+      }
+    });
+  }, 100);
+}
+
+// ── RECENT ──
+function renderRecent() {
+  const el = document.getElementById('tab-recent');
+  if (!recentData.length) { el.innerHTML = '<div class="loading">データなし</div>'; return; }
+  el.innerHTML = `<div class="fade-in"><div class="card">
+    <div class="card-title">📋 最近の明細（直近50件）</div>
+    ${[...recentData].reverse().map(r => recentItemHtml(r)).join('')}
+  </div></div>`;
+}
+
+function recentItemHtml(r) {
+  const cat = r.category || 'その他';
+  const ci = CAT_ICONS[cat] || CAT_ICONS['その他'];
+  const isSpecial = String(r.content).includes('受取') || String(r.content).includes('入金') || String(r.content).includes('移動');
+  return `<div class="recent-item">
+    <div class="recent-cat" style="background:${ci.color}22">${ci.icon}</div>
+    <div class="recent-info">
+      <div class="recent-content">${r.shop !== '-' ? r.shop + ' / ' : ''}${r.content}</div>
+      <div class="recent-detail">${formatDate(r.date)}　${r.payment}　${r.cashback > 0 ? '還元+' + Number(r.cashback).toLocaleString() + '円' : ''}</div>
+    </div>
+    <div class="recent-amount ${isSpecial ? 'positive' : ''}">${isSpecial ? '+' : '-'}${Number(r.amount).toLocaleString()}円</div>
+  </div>`;
+}
+
+// ── MONTHLY ──
+function renderMonthly() {
+  const el = document.getElementById('tab-monthly');
+  if (!monthlyData.length) { el.innerHTML = '<div class="loading">データなし</div>'; return; }
+
+  const headers = monthlyData[0];
+  const rows = monthlyData.slice(1).filter(r => r[0]);
+
+  const tableRows = rows.map(r =>
+    `<tr>${r.map((cell, i) => {
+      if (i === 0) return `<td>${cell}</td>`;
+      const num = Number(String(cell).replace(/[^0-9.-]/g,''));
+      const color = num > 0 ? '' : '';
+      return `<td>${isNaN(num) || cell === '' ? cell : num.toLocaleString()}</td>`;
+    }).join('')}</tr>`
+  ).join('');
+
+  // 月別グラフ用データ
+  const labels = rows.map(r => r[0]);
+  const amounts = rows.map(r => Number(String(r[1]).replace(/[^0-9.-]/g,'')) || 0);
+
+  el.innerHTML = `<div class="fade-in">
+    <div class="card">
+      <div class="card-title">📈 月別支出グラフ</div>
+      <div class="chart-wrap"><canvas id="chart-monthly"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📅 月別集計表</div>
+      <div style="overflow-x:auto">
+        <table class="monthly-table">
+          <tr>${headers.map((h,i) => `<th>${h}</th>`).join('')}</tr>
+          ${tableRows}
+        </table>
+      </div>
+    </div>
+  </div>`;
+
+  setTimeout(() => {
+    if (charts['monthly']) charts['monthly'].destroy();
+    const ctx = document.getElementById('chart-monthly');
+    if (!ctx || !labels.length) return;
+    charts['monthly'] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '支出',
+          data: amounts,
+          backgroundColor: 'rgba(100,200,255,0.4)',
+          borderColor: '#64c8ff',
+          borderWidth: 1,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+      }
+    });
+  }, 100);
+}
+
+// ── INVEST ──
+function renderInvest() {
+  const el = document.getElementById('tab-invest');
+  if (!investData.length) { el.innerHTML = '<div class="loading">データなし</div>'; return; }
+
+  const headers = investData[0];
+  const rows = investData.slice(1).filter(r => r[0]);
+
+  // ヘッダーから含み損益の列を探す
+  const profitIdx = headers.findIndex(h => String(h).includes('含み損益') && !String(h).includes('率'));
+  const profitCol = profitIdx >= 0 ? profitIdx : 7;
+  let totalProfit = 0;
+  const dataRows = rows.filter(r => r[0] && r[0] !== '合計');
+  dataRows.forEach(r => {
+    const val = r[profitCol];
+    totalProfit += typeof val === 'number' ? val : (Number(String(val).replace(/[^0-9.-]/g,'')) || 0);
+  });
+
+  el.innerHTML = `<div class="fade-in">
+    <div class="card">
+      <div class="card-title">💹 投資損益サマリー</div>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="summary-label">含み損益合計</div>
+          <div class="summary-value ${totalProfit >= 0 ? 'income' : 'expense'}">${totalProfit >= 0 ? '+' : ''}${Math.round(totalProfit).toLocaleString()}<span style="font-size:12px">円</span></div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">銘柄数</div>
+          <div class="summary-value">${dataRows.length}<span style="font-size:12px">件</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 投資明細</div>
+      <div style="overflow-x:auto">
+        <table class="monthly-table">
+          <tr>${headers.map(h => `<th style="white-space:nowrap;font-size:11px">${h}</th>`).join('')}</tr>
+          ${dataRows.map(r => `<tr>
+            <td style="white-space:nowrap">${r[0]}</td>
+            <td style="white-space:nowrap;min-width:80px">${r[1]}</td>
+            <td>${Number(r[2]).toLocaleString()}</td>
+            <td>${Number(r[3]).toLocaleString()}</td>
+            <td>${Number(r[4]).toLocaleString()}</td>
+            <td>${Number(r[5]).toLocaleString()}</td>
+            <td>${Number(r[6]).toLocaleString()}</td>
+            <td style="color:${Number(String(r[7]).replace(/[^0-9.-]/g,''))>=0?'#64ff96':'#ff6464'};font-weight:bold">${Number(r[7]).toLocaleString()}</td>
+            <td style="color:${Number(String(r[8]).replace(/[^0-9.%-]/g,''))>=0?'#64ff96':'#ff6464'}">${r[8]}</td>
+          </tr>`).join('')}
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Start
+loadAll();
+</script>
+</body>
+</html>
