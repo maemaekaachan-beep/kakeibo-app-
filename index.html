@@ -139,10 +139,20 @@ function switchTab(tab) {
   renderTab(tab);
 }
 
-async function fetchData(action) {
-  const res = await fetch(GAS_URL + "?action=" + action);
-  const json = await res.json();
-  return json.success ? json.data : [];
+function fetchDataJsonp(action) {
+  return new Promise((resolve) => {
+    const cbName = 'cb_' + action + '_' + Date.now();
+    window[cbName] = (json) => {
+      delete window[cbName];
+      document.getElementById('jsonp-' + action)?.remove();
+      resolve(json.success ? json.data : []);
+    };
+    const s = document.createElement('script');
+    s.id = 'jsonp-' + action;
+    s.src = GAS_URL + '?action=' + action + '&callback=' + cbName;
+    s.onerror = () => { resolve([]); };
+    document.body.appendChild(s);
+  });
 }
 
 async function loadAll() {
@@ -151,16 +161,13 @@ async function loadAll() {
   showLoading('monthly');
   showLoading('invest');
   try {
-    [recentData, monthlyData, investData] = await Promise.all([
-      fetchData('getRecent'),
-      fetchData('getMonthly'),
-      fetchData('getInvestment')
-    ]);
+    recentData = await fetchDataJsonp('getRecent');
+    monthlyData = await fetchDataJsonp('getMonthly');
+    investData = await fetchDataJsonp('getInvestment');
   } catch(e) {
     console.error(e);
   }
   renderTab(currentTab);
-  // Pre-render others silently
   ['home','recent','monthly','invest'].forEach(t => { if (t !== currentTab) renderTab(t); });
 }
 
@@ -360,12 +367,11 @@ function renderInvest() {
   const headers = investData[0];
   const rows = investData.slice(1).filter(r => r[0]);
 
-  // 損益合計を探す
+  // H列(index7)が含み損益
   let totalProfit = 0;
-  const items = rows.map(r => {
-    const profit = Number(String(r[r.length-1]).replace(/[^0-9.-]/g,'')) || 0;
-    totalProfit += profit;
-    return { name: r[0], values: r, profit };
+  const dataRows = rows.filter(r => r[0] && r[0] !== '合計');
+  dataRows.forEach(r => {
+    totalProfit += Number(String(r[7]).replace(/[^0-9.-]/g,'')) || 0;
   });
 
   el.innerHTML = `<div class="fade-in">
@@ -373,12 +379,12 @@ function renderInvest() {
       <div class="card-title">💹 投資損益サマリー</div>
       <div class="summary-grid">
         <div class="summary-item">
-          <div class="summary-label">損益合計</div>
-          <div class="summary-value invest ${totalProfit >= 0 ? 'income' : 'expense'}">${totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString()}<span style="font-size:12px">円</span></div>
+          <div class="summary-label">含み損益合計</div>
+          <div class="summary-value ${totalProfit >= 0 ? 'income' : 'expense'}">${totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString()}<span style="font-size:12px">円</span></div>
         </div>
         <div class="summary-item">
           <div class="summary-label">銘柄数</div>
-          <div class="summary-value">${items.length}<span style="font-size:12px">件</span></div>
+          <div class="summary-value">${dataRows.length}<span style="font-size:12px">件</span></div>
         </div>
       </div>
     </div>
@@ -386,8 +392,18 @@ function renderInvest() {
       <div class="card-title">📋 投資明細</div>
       <div style="overflow-x:auto">
         <table class="monthly-table">
-          <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
-          ${rows.map(r => `<tr>${r.map((cell,i) => `<td>${cell}</td>`).join('')}</tr>`).join('')}
+          <tr>${headers.map(h => `<th style="white-space:nowrap;font-size:11px">${h}</th>`).join('')}</tr>
+          ${dataRows.map(r => `<tr>
+            <td style="white-space:nowrap">${r[0]}</td>
+            <td style="white-space:nowrap;min-width:80px">${r[1]}</td>
+            <td>${Number(r[2]).toLocaleString()}</td>
+            <td>${Number(r[3]).toLocaleString()}</td>
+            <td>${Number(r[4]).toLocaleString()}</td>
+            <td>${Number(r[5]).toLocaleString()}</td>
+            <td>${Number(r[6]).toLocaleString()}</td>
+            <td style="color:${Number(String(r[7]).replace(/[^0-9.-]/g,''))>=0?'#64ff96':'#ff6464'};font-weight:bold">${Number(r[7]).toLocaleString()}</td>
+            <td style="color:${Number(String(r[8]).replace(/[^0-9.%-]/g,''))>=0?'#64ff96':'#ff6464'}">${r[8]}</td>
+          </tr>`).join('')}
         </table>
       </div>
     </div>
