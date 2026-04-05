@@ -95,12 +95,7 @@
 <meta name="apple-mobile-web-app-title" content="家計簿">
 <link rel="apple-touch-icon" href="icon-192.png">
 </head>
-  <script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
-}
-</script>
-<body>
+ <body>
 
 <div class="header">
   <div class="header-icon">📊</div>
@@ -462,6 +457,11 @@ function renderInvest() {
 
 // Start
 loadAll();
+</script>
+  <script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
 </script>
 </body>
 </html>
