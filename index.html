@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>家計簿 📊</title>
+  <title>家計簿📊</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <style>
@@ -57,6 +57,9 @@
     .monthly-table td { padding: 8px 4px; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.05); }
     .monthly-table td:first-child { text-align: left; color: #64c8ff; }
     .monthly-table tr:last-child td { border-bottom: none; }
+    .monthly-table tr.clickable-row { cursor: pointer; transition: background 0.15s; }
+    .monthly-table tr.clickable-row:hover { background: rgba(100,200,255,0.07); }
+    .monthly-table tr.clickable-row.selected { background: rgba(100,200,255,0.12); }
 
     /* Chart container */
     .chart-wrap { position: relative; height: 200px; margin: 8px 0; }
@@ -77,10 +80,13 @@
     .invest-profit.zero { color: rgba(255,255,255,0.5); }
 
     /* Refresh button */
-    .refresh-btn { background: rgba(100,200,255,0.1); border: 1px solid rgba(100,200,255,0.3); border-radius: 20px; color: #64c8ff; padding: 6px 14px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; margin-left: auto; }
+    .refresh-btn { background: rgba(100,200,255,0.1); border: 1px solid rgba(100,200,255,0.3); border-radius: 20px; color: #64c8ff; padding: 6px 14px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .fade-in { animation: fadeIn 0.3s ease-out; }
+
+    /* Detail hint */
+    .detail-hint { font-size: 10px; color: rgba(255,255,255,0.3); text-align: center; margin-top: 4px; margin-bottom: 8px; }
   </style>
 </head>
 <body>
@@ -118,13 +124,13 @@ let currentTab = 'home';
 let charts = {};
 
 const CAT_ICONS = {
-  "食費": { icon: "🍱", color: "#ff8c64" },
+  "食費": { icon: "🍚", color: "#ff8c64" },
   "外食費": { icon: "🍜", color: "#ff6496" },
   "固定費": { icon: "🏠", color: "#6496ff" },
-  "交通費": { icon: "🚃", color: "#64c8ff" },
+  "交通費": { icon: "🚗", color: "#64c8ff" },
   "医療費": { icon: "💊", color: "#ff64c8" },
-  "ペット費": { icon: "🐱", color: "#ffd764" },
-  "日用品": { icon: "🛒", color: "#64ff96" },
+  "ペット費": { icon: "🐾", color: "#ffd764" },
+  "日用品": { icon: "🧴", color: "#64ff96" },
   "その他": { icon: "📦", color: "#a0a0a0" },
 };
 
@@ -155,6 +161,41 @@ function fetchDataJsonp(action) {
   });
 }
 
+async function fetchDetail(year, month) {
+  return new Promise((resolve) => {
+    const cbName = 'cb_det_' + Date.now();
+    window[cbName] = (json) => {
+      delete window[cbName];
+      document.getElementById('jsonp-det')?.remove();
+      resolve(json.success ? json.data : []);
+    };
+    const s = document.createElement('script');
+    s.id = 'jsonp-det';
+    s.src = GAS_URL + '?action=getDetail&year=' + year + '&month=' + month + '&callback=' + cbName;
+    s.onerror = () => { resolve([]); };
+    document.body.appendChild(s);
+  });
+}
+
+async function showMonthDetail(year, month, rowEl) {
+  // 選択行のハイライト
+  document.querySelectorAll('.clickable-row').forEach(r => r.classList.remove('selected'));
+  if (rowEl) rowEl.classList.add('selected');
+
+  const area = document.getElementById('month-detail-area');
+  if (!area) return;
+  area.innerHTML = '<div class="loading"><div class="loading-spinner">⏳</div><div>読み込み中...</div></div>';
+  area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  const data = await fetchDetail(year, month);
+  if (!data.length) {
+    area.innerHTML = `<div class="card"><div class="card-title">📋 ${year}/${month}月の明細</div><p style="color:rgba(255,255,255,0.5);text-align:center;padding:20px">データなし</p></div>`;
+    return;
+  }
+  const items = [...data].reverse().map(r => recentItemHtml(r)).join('');
+  area.innerHTML = `<div class="card fade-in"><div class="card-title">📋 ${year}/${month}月の明細（${data.length}件）</div>${items}</div>`;
+}
+
 async function loadAll() {
   showLoading('home');
   showLoading('recent');
@@ -172,7 +213,7 @@ async function loadAll() {
 }
 
 function showLoading(tab) {
-  document.getElementById('tab-' + tab).innerHTML = `<div class="loading"><div class="loading-spinner">⚙️</div><div>読み込み中…</div></div>`;
+  document.getElementById('tab-' + tab).innerHTML = `<div class="loading"><div class="loading-spinner">⏳</div><div>読み込み中...</div></div>`;
 }
 
 function renderTab(tab) {
@@ -193,12 +234,11 @@ function formatDate(d) {
   return (date.getMonth()+1) + '/' + date.getDate();
 }
 
-// ── HOME ──
+// — HOME —
 function renderHome() {
   const el = document.getElementById('tab-home');
   if (!recentData.length) { el.innerHTML = '<div class="loading">データなし</div>'; return; }
 
-  // 今月の集計
   const now = new Date();
   const thisMonth = recentData.filter(r => {
     const d = new Date(r.date);
@@ -208,7 +248,6 @@ function renderHome() {
   const totalExpense = thisMonth.reduce((s, r) => s + (Number(r.amount) || 0), 0);
   const totalCashback = thisMonth.reduce((s, r) => s + (Number(r.cashback) || 0), 0);
 
-  // カテゴリ別
   const catMap = {};
   thisMonth.forEach(r => {
     const cat = r.category || 'その他';
@@ -219,7 +258,7 @@ function renderHome() {
   el.innerHTML = `
     <div class="fade-in">
       <div class="card">
-        <div class="card-title">📅 今月の集計（${now.getMonth()+1}月）</div>
+        <div class="card-title">📅 今月の集計 (${now.getMonth()+1}月)</div>
         <div class="summary-grid">
           <div class="summary-item">
             <div class="summary-label">支出合計</div>
@@ -233,7 +272,7 @@ function renderHome() {
       </div>
 
       <div class="card">
-        <div class="card-title">🍩 カテゴリ別（今月）</div>
+        <div class="card-title">🧭 カテゴリ別 (今月)</div>
         <div class="chart-wrap"><canvas id="chart-cat"></canvas></div>
       </div>
 
@@ -243,7 +282,6 @@ function renderHome() {
       </div>
     </div>`;
 
-  // Chart
   setTimeout(() => {
     if (charts['cat']) charts['cat'].destroy();
     const ctx = document.getElementById('chart-cat');
@@ -261,20 +299,18 @@ function renderHome() {
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'right', labels: { color: '#e8e8e8', font: { size: 10 }, boxWidth: 12 } }
-        }
+        plugins: { legend: { position: 'right', labels: { color: '#e8e8e8', font: { size: 10 }, boxWidth: 12 } } }
       }
     });
   }, 100);
 }
 
-// ── RECENT ──
+// — RECENT —
 function renderRecent() {
   const el = document.getElementById('tab-recent');
   if (!recentData.length) { el.innerHTML = '<div class="loading">データなし</div>'; return; }
   el.innerHTML = `<div class="fade-in"><div class="card">
-    <div class="card-title">📋 最近の明細（直近50件）</div>
+    <div class="card-title">📋 最近の明細 (最近50件)</div>
     ${[...recentData].reverse().map(r => recentItemHtml(r)).join('')}
   </div></div>`;
 }
@@ -287,13 +323,13 @@ function recentItemHtml(r) {
     <div class="recent-cat" style="background:${ci.color}22">${ci.icon}</div>
     <div class="recent-info">
       <div class="recent-content">${r.shop !== '-' ? r.shop + ' / ' : ''}${r.content}</div>
-      <div class="recent-detail">${formatDate(r.date)}　${r.payment}　${r.cashback > 0 ? '還元+' + Number(r.cashback).toLocaleString() + '円' : ''}</div>
+      <div class="recent-detail">${formatDate(r.date)} ${r.payment} ${r.cashback > 0 ? '還元+' + Number(r.cashback).toLocaleString() + '円' : ''}</div>
     </div>
     <div class="recent-amount ${isSpecial ? 'positive' : ''}">${isSpecial ? '+' : '-'}${Number(r.amount).toLocaleString()}円</div>
   </div>`;
 }
 
-// ── MONTHLY ──
+// — MONTHLY —
 function renderMonthly() {
   const el = document.getElementById('tab-monthly');
   if (!monthlyData.length) { el.innerHTML = '<div class="loading">データなし</div>'; return; }
@@ -301,26 +337,29 @@ function renderMonthly() {
   const headers = monthlyData[0];
   const rows = monthlyData.slice(1).filter(r => r[0]);
 
-  const tableRows = rows.map(r =>
-    `<tr>${r.map((cell, i) => {
+  const tableRows = rows.map((r, rowIdx) => {
+    const ym = String(r[0]);
+    const year = parseInt(ym.substring(0, 4));
+    const month = parseInt(ym.substring(5, 7));
+    const cells = r.map((cell, i) => {
       if (i === 0) return `<td>${cell}</td>`;
       const num = Number(String(cell).replace(/[^0-9.-]/g,''));
-      const color = num > 0 ? '' : '';
       return `<td>${isNaN(num) || cell === '' ? cell : num.toLocaleString()}</td>`;
-    }).join('')}</tr>`
-  ).join('');
+    }).join('');
+    return `<tr class="clickable-row" onclick="showMonthDetail(${year},${month},this)">${cells}</tr>`;
+  }).join('');
 
-  // 月別グラフ用データ
   const labels = rows.map(r => r[0]);
   const amounts = rows.map(r => Number(String(r[1]).replace(/[^0-9.-]/g,'')) || 0);
 
   el.innerHTML = `<div class="fade-in">
     <div class="card">
-      <div class="card-title">📈 月別支出グラフ</div>
+      <div class="card-title">📊 月別支出グラフ</div>
       <div class="chart-wrap"><canvas id="chart-monthly"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-title">📅 月別集計表</div>
+      <div class="card-title">📋 月別集計表</div>
+      <p class="detail-hint">👆 行をタップすると月別明細を表示</p>
       <div style="overflow-x:auto">
         <table class="monthly-table">
           <tr>${headers.map((h,i) => `<th>${h}</th>`).join('')}</tr>
@@ -328,6 +367,7 @@ function renderMonthly() {
         </table>
       </div>
     </div>
+    <div id="month-detail-area"></div>
   </div>`;
 
   setTimeout(() => {
@@ -359,15 +399,14 @@ function renderMonthly() {
   }, 100);
 }
 
-// ── INVEST ──
+// — INVEST —
 function renderInvest() {
   const el = document.getElementById('tab-invest');
   if (!investData.length) { el.innerHTML = '<div class="loading">データなし</div>'; return; }
 
   const headers = investData[0];
-  const rows = investData.slice(1).filter(r => r[0]);
+  const rows = investData.slice(1).filter(r => r[0] && r[0] !== '合計');
 
-  // H列(index7)が含み損益
   let totalProfit = 0;
   const dataRows = rows.filter(r => r[0] && r[0] !== '合計');
   dataRows.forEach(r => {
