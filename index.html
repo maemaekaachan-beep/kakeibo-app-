@@ -284,7 +284,7 @@ function renderHome() {
 
       <div class="card">
         <div class="card-title">🕐 最近の支出</div>
-        ${recentData.slice(-5).reverse().map(r => recentItemHtml(r)).join('')}
+        ${recentData.filter(r => r.category !== '収入').slice(-5).reverse().map(r => recentItemHtml(r)).join('')}
       </div>
     </div>`;
 
