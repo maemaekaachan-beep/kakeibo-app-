@@ -251,7 +251,7 @@ function renderHome() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
 
-  const totalExpense = thisMonth.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+ const totalExpense = thisMonth.filter(r => r.category !== '収入').reduce((s, r) => s + (Number(r.amount) || 0), 0);
   const totalCashback = thisMonth.reduce((s, r) => s + (Number(r.cashback) || 0), 0);
 
   const catMap = {};
