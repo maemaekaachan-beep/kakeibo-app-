@@ -332,7 +332,7 @@ function recentItemHtml(r) {
       <div class="recent-content">${r.shop !== '-' ? r.shop + ' / ' : ''}${r.content}</div>
       <div class="recent-detail">${formatDate(r.date)} ${r.payment} ${r.cashback > 0 ? '還元+' + Number(r.cashback).toLocaleString() + '円' : ''}</div>
     </div>
-    <div class="recent-amount ${isIncome ? '+' : isSpecial ? '+' : '-'}${Number(r.amount).toLocaleString()}円</div>
+    <div class="recent-amount ${isIncome ? 'positive' : isSpecial ? 'positive' : ''}">${isIncome ? '+' : isSpecial ? '+' : '-'}${Number(r.amount).toLocaleString()}円</div>
   </div>`;
 }
 
