@@ -325,13 +325,14 @@ function recentItemHtml(r) {
   const cat = r.category || 'その他';
   const ci = CAT_ICONS[cat] || CAT_ICONS['その他'];
   const isSpecial = String(r.content).includes('受取') || String(r.content).includes('入金') || String(r.content).includes('移動');
-  return `<div class="recent-item">
+  const isIncome = r.category === '収入';
+ return `<div class="recent-item">
     <div class="recent-cat" style="background:${ci.color}22">${ci.icon}</div>
     <div class="recent-info">
       <div class="recent-content">${r.shop !== '-' ? r.shop + ' / ' : ''}${r.content}</div>
       <div class="recent-detail">${formatDate(r.date)} ${r.payment} ${r.cashback > 0 ? '還元+' + Number(r.cashback).toLocaleString() + '円' : ''}</div>
     </div>
-    <div class="recent-amount ${isSpecial ? 'positive' : ''}">${isSpecial ? '+' : '-'}${Number(r.amount).toLocaleString()}円</div>
+    <div class="recent-amount ${isIncome ? '+' : isSpecial ? '+' : '-'}${Number(r.amount).toLocaleString()}円</div>
   </div>`;
 }
 
