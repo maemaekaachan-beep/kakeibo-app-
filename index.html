@@ -279,7 +279,7 @@ function renderInput() {
       <div style="margin-bottom:16px">
         <label style="font-size:11px;color:rgba(255,255,255,0.5)">${isExpense ? '支払い方法' : '振込先'}</label><br>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
-          ${[['g','GMOあおぞら'],['n','三井住友NL'],['j','JCB S'],['s','SBI新生'],['a','あおぞら'],['y','ゆうちょ'],['ra','楽天']].map(([code,label]) =>
+          ${[['g','GMOあおぞら'],['n','三井住友NL'],['j','JCB S'],['s','SBI新生'],['a','あおぞら'],['y','ゆうちょ'],['ra','楽天'],['c','現金']].map(([code,label]) =>
             `<span onclick="selectPayment('${code}')" id="pay-${code}" style="font-size:11px;padding:4px 10px;border-radius:12px;background:rgba(100,200,255,0.1);border:1px solid rgba(100,200,255,0.3);color:#64c8ff;cursor:pointer">${label}</span>`
           ).join('')}
         </div>
