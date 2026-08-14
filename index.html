@@ -111,6 +111,7 @@
   <div class="tab" onclick="switchTab('recent')"><span class="tab-icon">📋</span>明細</div>
   <div class="tab" onclick="switchTab('monthly')"><span class="tab-icon">📅</span>月別</div>
   <div class="tab" onclick="switchTab('invest')"><span class="tab-icon">📈</span>投資</div>
+  <div class="tab" onclick="switchTab('input')"><span class="tab-icon">✏️</span>入力</div>
 </div>
 
 <div class="content">
@@ -118,6 +119,7 @@
   <div id="tab-recent" style="display:none"></div>
   <div id="tab-monthly" style="display:none"></div>
   <div id="tab-invest" style="display:none"></div>
+  <div id="tab-input" style="display:none"></div>
 </div>
 
 <script>
@@ -142,9 +144,9 @@ const CAT_ICONS = {
 
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', ['home','recent','monthly','invest'][i] === tab);
+    t.classList.toggle('active', ['home','recent','monthly','invest','input'][i] === tab);
   });
-  ['home','recent','monthly','invest'].forEach(t => {
+  ['home','recent','monthly','invest','input'].forEach(t => {
     document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
   });
   currentTab = tab;
@@ -207,6 +209,7 @@ async function loadAll() {
   showLoading('recent');
   showLoading('monthly');
   showLoading('invest');
+  showLoading('input');
   try {
     recentData = await fetchDataJsonp('getRecent');
     monthlyData = await fetchDataJsonp('getMonthly');
@@ -214,9 +217,8 @@ async function loadAll() {
   } catch(e) {
     console.error(e);
   }
-  renderTab(currentTab);
-  ['home','recent','monthly','invest'].forEach(t => { if (t !== currentTab) renderTab(t); });
-}
+ ['home','recent','monthly','invest','input'].forEach(t => { if (t !== currentTab) renderTab(t); });
+  
 
 function showLoading(tab) {
   document.getElementById('tab-' + tab).innerHTML = `<div class="loading"><div class="loading-spinner">⏳</div><div>読み込み中...</div></div>`;
@@ -226,9 +228,105 @@ function renderTab(tab) {
   if (tab === 'home') renderHome();
   if (tab === 'recent') renderRecent();
   if (tab === 'monthly') renderMonthly();
+  if (tab === 'input') renderInput();
   if (tab === 'invest') renderInvest();
 }
+　function renderInput() {
+  const el = document.getElementById('tab-input');
+  const today = new Date().toISOString().slice(0,10);
+  el.innerHTML = `
+    <div class="fade-in"><div class="card">
+      <div class="card-title">✏️ 支出を記録</div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;color:rgba(255,255,255,0.5)">日付</label><br>
+        <input type="date" id="in-date" value="${today}" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:#0f1923;color:#fff;margin-top:4px">
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;color:rgba(255,255,255,0.5)">店舗名</label><br>
+        <input type="text" id="in-shop" placeholder="ウエルシア" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:#0f1923;color:#fff;margin-top:4px">
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;color:rgba(255,255,255,0.5)">内容（カテゴリ判定に使われます）</label><br>
+        <input type="text" id="in-content" placeholder="食品" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:#0f1923;color:#fff;margin-top:4px">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+          ${['食品','外食','固定費','電車','ガソリン','医療','ペット用品','服','日用品','積立','寄付','給与'].map(k =>
+            `<span onclick="document.getElementById('in-content').value='${k}'" style="font-size:11px;padding:4px 10px;border-radius:12px;background:rgba(100,200,255,0.1);border:1px solid rgba(100,200,255,0.3);color:#64c8ff;cursor:pointer">${k}</span>`
+          ).join('')}
+        </div>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;color:rgba(255,255,255,0.5)">金額</label><br>
+        <input type="number" id="in-amount" placeholder="226" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:#0f1923;color:#fff;margin-top:4px">
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:11px;color:rgba(255,255,255,0.5)">支払い方法</label><br>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
+          ${[['g','GMOあおぞら'],['n','三井住友NL'],['j','JCB S'],['s','SBI新生'],['a','あおぞら'],['y','ゆうちょ'],['ra','楽天']].map(([code,label]) =>
+            `<span onclick="selectPayment('${code}')" id="pay-${code}" style="font-size:11px;padding:4px 10px;border-radius:12px;background:rgba(100,200,255,0.1);border:1px solid rgba(100,200,255,0.3);color:#64c8ff;cursor:pointer">${label}</span>`
+          ).join('')}
+        </div>
+        <input type="hidden" id="in-payment" value="">
+      </div>
+      <button onclick="submitEntry()" style="width:100%;padding:12px;border-radius:8px;border:none;background:#64c8ff;color:#0f1923;font-weight:bold;font-size:14px;cursor:pointer">記録する</button>
+      <div id="in-message" style="margin-top:10px;font-size:12px;text-align:center"></div>
+    </div></div>`;
+}
 
+function selectPayment(code) {
+  document.getElementById('in-payment').value = code;
+  document.querySelectorAll('[id^="pay-"]').forEach(el => {
+    el.style.background = el.id === 'pay-' + code ? 'rgba(100,200,255,0.4)' : 'rgba(100,200,255,0.1)';
+  });
+}
+
+async function submitEntry() {
+  const msgEl = document.getElementById('in-message');
+  const date = document.getElementById('in-date').value;
+  const shop = document.getElementById('in-shop').value;
+  const content = document.getElementById('in-content').value;
+  const amount = document.getElementById('in-amount').value;
+  const payment = document.getElementById('in-payment').value;
+
+  if (!content || !amount || !payment) {
+    msgEl.style.color = '#ff6464';
+    msgEl.textContent = '内容・金額・支払い方法は必須です';
+    return;
+  }
+
+  let token = localStorage.getItem('kakeibo_token');
+  if (!token) {
+    token = prompt('アクセストークンを入力してください');
+    if (!token) return;
+    localStorage.setItem('kakeibo_token', token);
+  }
+
+  msgEl.style.color = '#64c8ff';
+  msgEl.textContent = '送信中...';
+
+  const params = new URLSearchParams({
+    action: 'addEntry', token, date, shop, content, amount, payment
+  });
+
+  try {
+    const res = await fetch(GAS_URL, { method: 'POST', body: params });
+    const json = await res.json();
+    if (json.success) {
+      msgEl.style.color = '#64ff96';
+      msgEl.textContent = '✅ 記録しました';
+      document.getElementById('in-shop').value = '';
+      document.getElementById('in-content').value = '';
+      document.getElementById('in-amount').value = '';
+      loadAll();
+    } else {
+      msgEl.style.color = '#ff6464';
+      msgEl.textContent = '❌ ' + (json.error || 'エラーが発生しました');
+      if (json.error === '認証エラー') localStorage.removeItem('kakeibo_token');
+    }
+  } catch (e) {
+    msgEl.style.color = '#ff6464';
+    msgEl.textContent = '❌ 通信エラー';
+  }
+}
 function formatAmount(n) {
   return Number(n).toLocaleString('ja-JP') + '円';
 }
