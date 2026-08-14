@@ -217,8 +217,9 @@ async function loadAll() {
   } catch(e) {
     console.error(e);
   }
- ['home','recent','monthly','invest','input'].forEach(t => { if (t !== currentTab) renderTab(t); });
-  
+  renderTab(currentTab);
+  ['home','recent','monthly','invest','input'].forEach(t => { if (t !== currentTab) renderTab(t); });
+}
 
 function showLoading(tab) {
   document.getElementById('tab-' + tab).innerHTML = `<div class="loading"><div class="loading-spinner">⏳</div><div>読み込み中...</div></div>`;
