@@ -232,25 +232,42 @@ function renderTab(tab) {
   if (tab === 'input') renderInput();
   if (tab === 'invest') renderInvest();
 }
-　function renderInput() {
+　let inputMode = 'expense';
+
+function switchInputMode(mode) {
+  inputMode = mode;
+  renderInput();
+}
+
+function renderInput() {
   const el = document.getElementById('tab-input');
   const today = new Date().toISOString().slice(0,10);
+  const isExpense = inputMode === 'expense';
+
+  const contentChips = isExpense
+    ? ['食品','外食','固定費','電車','ガソリン','医療','ペット用品','服','日用品','積立','寄付']
+    : ['給与','賞与','ボーナス','財産分与','収入'];
+
   el.innerHTML = `
     <div class="fade-in"><div class="card">
-      <div class="card-title">✏️ 支出を記録</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button onclick="switchInputMode('expense')" style="flex:1;padding:8px;border-radius:8px;border:1px solid ${isExpense ? '#64c8ff' : 'rgba(100,200,255,0.2)'};background:${isExpense ? 'rgba(100,200,255,0.15)' : 'transparent'};color:${isExpense ? '#64c8ff' : 'rgba(255,255,255,0.5)'};font-size:13px;font-weight:bold;cursor:pointer">➖ 支出を記録</button>
+        <button onclick="switchInputMode('income')" style="flex:1;padding:8px;border-radius:8px;border:1px solid ${!isExpense ? '#64ff96' : 'rgba(100,200,255,0.2)'};background:${!isExpense ? 'rgba(100,255,150,0.12)' : 'transparent'};color:${!isExpense ? '#64ff96' : 'rgba(255,255,255,0.5)'};font-size:13px;font-weight:bold;cursor:pointer">➕ 収入を記録</button>
+      </div>
+      <div class="card-title">${isExpense ? '✏️ 支出を記録' : '💰 収入を記録'}</div>
       <div style="margin-bottom:12px">
         <label style="font-size:11px;color:rgba(255,255,255,0.5)">日付</label><br>
         <input type="date" id="in-date" value="${today}" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:#0f1923;color:#fff;margin-top:4px">
       </div>
       <div style="margin-bottom:12px">
-        <label style="font-size:11px;color:rgba(255,255,255,0.5)">店舗名</label><br>
-        <input type="text" id="in-shop" placeholder="ウエルシア" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:#0f1923;color:#fff;margin-top:4px">
+        <label style="font-size:11px;color:rgba(255,255,255,0.5)">${isExpense ? '店舗名' : '振込元（会社名など・任意）'}</label><br>
+        <input type="text" id="in-shop" placeholder="${isExpense ? 'ウエルシア' : '〇〇株式会社'}" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:#0f1923;color:#fff;margin-top:4px">
       </div>
       <div style="margin-bottom:12px">
         <label style="font-size:11px;color:rgba(255,255,255,0.5)">内容（カテゴリ判定に使われます）</label><br>
-        <input type="text" id="in-content" placeholder="食品" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:#0f1923;color:#fff;margin-top:4px">
+        <input type="text" id="in-content" placeholder="${isExpense ? '食品' : '給与'}" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:#0f1923;color:#fff;margin-top:4px">
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
-          ${['食品','外食','固定費','電車','ガソリン','医療','ペット用品','服','日用品','積立','寄付','給与'].map(k =>
+          ${contentChips.map(k =>
             `<span onclick="document.getElementById('in-content').value='${k}'" style="font-size:11px;padding:4px 10px;border-radius:12px;background:rgba(100,200,255,0.1);border:1px solid rgba(100,200,255,0.3);color:#64c8ff;cursor:pointer">${k}</span>`
           ).join('')}
         </div>
@@ -260,7 +277,7 @@ function renderTab(tab) {
         <input type="number" id="in-amount" placeholder="226" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:#0f1923;color:#fff;margin-top:4px">
       </div>
       <div style="margin-bottom:16px">
-        <label style="font-size:11px;color:rgba(255,255,255,0.5)">支払い方法</label><br>
+        <label style="font-size:11px;color:rgba(255,255,255,0.5)">${isExpense ? '支払い方法' : '振込先'}</label><br>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
           ${[['g','GMOあおぞら'],['n','三井住友NL'],['j','JCB S'],['s','SBI新生'],['a','あおぞら'],['y','ゆうちょ'],['ra','楽天']].map(([code,label]) =>
             `<span onclick="selectPayment('${code}')" id="pay-${code}" style="font-size:11px;padding:4px 10px;border-radius:12px;background:rgba(100,200,255,0.1);border:1px solid rgba(100,200,255,0.3);color:#64c8ff;cursor:pointer">${label}</span>`
@@ -268,7 +285,7 @@ function renderTab(tab) {
         </div>
         <input type="hidden" id="in-payment" value="">
       </div>
-      <button onclick="submitEntry()" style="width:100%;padding:12px;border-radius:8px;border:none;background:#64c8ff;color:#0f1923;font-weight:bold;font-size:14px;cursor:pointer">記録する</button>
+      <button onclick="submitEntry()" style="width:100%;padding:12px;border-radius:8px;border:none;background:${isExpense ? '#64c8ff' : '#64ff96'};color:#0f1923;font-weight:bold;font-size:14px;cursor:pointer">記録する</button>
       <div id="in-message" style="margin-top:10px;font-size:12px;text-align:center"></div>
     </div></div>`;
 }
