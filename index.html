@@ -8,88 +8,88 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0f1923; color: #e8e8e8; font-family: 'Helvetica Neue', sans-serif; min-height: 100vh; }
+    body { background: #eef2f6; color: #1f2937; font-family: 'Helvetica Neue', sans-serif; min-height: 100vh; }
     ::-webkit-scrollbar { display: none; }
 
     /* Header */
-    .header { background: linear-gradient(135deg, #1a2a3a, #0f1923); padding: 16px 18px; border-bottom: 1px solid rgba(100,200,255,0.15); display: flex; align-items: center; gap: 10px; }
+    .header { background: linear-gradient(135deg, #ffffff, #eef3fb); padding: 16px 18px; border-bottom: 1px solid rgba(37,99,235,0.15); display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
     .header-icon { font-size: 24px; }
-    .header-title { font-size: 18px; font-weight: bold; color: #64c8ff; }
-    .header-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .header-title { font-size: 18px; font-weight: bold; color: #2563eb; }
+    .header-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
 
     /* Tab bar */
-    .tabs { display: flex; background: #0f1923; border-bottom: 1px solid rgba(100,200,255,0.1); }
-    .tab { flex: 1; padding: 12px 4px; text-align: center; font-size: 11px; color: rgba(255,255,255,0.4); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
-    .tab.active { color: #64c8ff; border-bottom-color: #64c8ff; }
+    .tabs { display: flex; background: #ffffff; border-bottom: 1px solid rgba(0,0,0,0.06); }
+    .tab { flex: 1; padding: 12px 4px; text-align: center; font-size: 11px; color: #9ca3af; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .tab.active { color: #2563eb; border-bottom-color: #2563eb; }
     .tab-icon { font-size: 18px; display: block; margin-bottom: 2px; }
 
     /* Content */
     .content { padding: 16px; max-width: 480px; margin: 0 auto; }
 
     /* Cards */
-    .card { background: linear-gradient(135deg, #1a2a3a, #162030); border: 1px solid rgba(100,200,255,0.15); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
-    .card-title { color: #64c8ff; font-size: 11px; letter-spacing: 1px; margin-bottom: 12px; font-weight: bold; }
+    .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.06); border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+    .card-title { color: #2563eb; font-size: 11px; letter-spacing: 1px; margin-bottom: 12px; font-weight: bold; }
 
     /* Summary numbers */
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-    .summary-item { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 12px; text-align: center; }
-    .summary-label { font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
-    .summary-value { font-size: 20px; font-weight: bold; color: #fff; }
-    .summary-value.income { color: #64ff96; }
-    .summary-value.expense { color: #ff6464; }
-    .summary-value.cashback { color: #ffd764; }
-    .summary-value.invest { color: #a78bfa; }
+    .summary-item { background: #f8fafc; border-radius: 10px; padding: 12px; text-align: center; }
+    .summary-label { font-size: 10px; color: #6b7280; margin-bottom: 4px; }
+    .summary-value { font-size: 20px; font-weight: bold; color: #111827; }
+    .summary-value.income { color: #16a34a; }
+    .summary-value.expense { color: #dc2626; }
+    .summary-value.cashback { color: #d97706; }
+    .summary-value.invest { color: #7c3aed; }
 
     /* Recent list */
-    .recent-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .recent-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
     .recent-item:last-child { border-bottom: none; }
     .recent-cat { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
     .recent-info { flex: 1; min-width: 0; }
-    .recent-content { font-size: 13px; color: #e8e8e8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .recent-detail { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
-    .recent-amount { font-size: 14px; font-weight: bold; color: #ff8c8c; flex-shrink: 0; }
-    .recent-amount.positive { color: #64ff96; }
+    .recent-content { font-size: 13px; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .recent-detail { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+    .recent-amount { font-size: 14px; font-weight: bold; color: #dc2626; flex-shrink: 0; }
+    .recent-amount.positive { color: #16a34a; }
 
     /* Monthly table */
     .monthly-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .monthly-table th { color: rgba(255,255,255,0.5); font-weight: normal; padding: 6px 4px; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .monthly-table th { color: #6b7280; font-weight: normal; padding: 6px 4px; text-align: right; border-bottom: 1px solid rgba(0,0,0,0.08); }
     .monthly-table th:first-child { text-align: left; }
-    .monthly-table td { padding: 8px 4px; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .monthly-table td:first-child { text-align: left; color: #64c8ff; }
+    .monthly-table td { padding: 8px 4px; text-align: right; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .monthly-table td:first-child { text-align: left; color: #2563eb; }
     .monthly-table tr:last-child td { border-bottom: none; }
     .monthly-table tr.clickable-row { cursor: pointer; transition: background 0.15s; }
-    .monthly-table tr.clickable-row:hover { background: rgba(100,200,255,0.07); }
-    .monthly-table tr.clickable-row.selected { background: rgba(100,200,255,0.12); }
+    .monthly-table tr.clickable-row:hover { background: rgba(37,99,235,0.06); }
+    .monthly-table tr.clickable-row.selected { background: rgba(37,99,235,0.1); }
 
     /* Chart container */
     .chart-wrap { position: relative; height: 200px; margin: 8px 0; }
 
     /* Loading */
-    .loading { text-align: center; padding: 40px; color: rgba(255,255,255,0.4); }
+    .loading { text-align: center; padding: 40px; color: #9ca3af; }
     .loading-spinner { font-size: 32px; animation: spin 1s linear infinite; display: inline-block; margin-bottom: 10px; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* Investment */
-    .invest-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .invest-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
     .invest-item:last-child { border-bottom: none; }
-    .invest-name { font-size: 13px; color: #e8e8e8; }
-    .invest-detail { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .invest-name { font-size: 13px; color: #1f2937; }
+    .invest-detail { font-size: 10px; color: #9ca3af; margin-top: 2px; }
     .invest-profit { font-size: 14px; font-weight: bold; }
-    .invest-profit.plus { color: #64ff96; }
-    .invest-profit.minus { color: #ff6464; }
-    .invest-profit.zero { color: rgba(255,255,255,0.5); }
+    .invest-profit.plus { color: #16a34a; }
+    .invest-profit.minus { color: #dc2626; }
+    .invest-profit.zero { color: #9ca3af; }
 
     /* Refresh button */
-    .refresh-btn { background: rgba(100,200,255,0.1); border: 1px solid rgba(100,200,255,0.3); border-radius: 20px; color: #64c8ff; padding: 6px 14px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .refresh-btn { background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.3); border-radius: 20px; color: #2563eb; padding: 6px 14px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .fade-in { animation: fadeIn 0.3s ease-out; }
 
     /* Detail hint */
-    .detail-hint { font-size: 10px; color: rgba(255,255,255,0.3); text-align: center; margin-top: 4px; margin-bottom: 8px; }
+    .detail-hint { font-size: 10px; color: #9ca3af; text-align: center; margin-top: 4px; margin-bottom: 8px; }
   </style>
   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f1923">
+<meta name="theme-color" content="#eef3fb">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="家計簿">
@@ -135,10 +135,10 @@ const CAT_ICONS = {
   "食費": { icon: "🍚", color: "#ff8c64" },
   "外食費": { icon: "🍜", color: "#ff6496" },
   "固定費": { icon: "🏠", color: "#6496ff" },
-  "交通費": { icon: "🚗", color: "#64c8ff" },
+  "交通費": { icon: "🚗", color: "#2563eb" },
   "医療費": { icon: "💊", color: "#ff64c8" },
-  "ペット費": { icon: "🐾", color: "#ffd764" },
-  "日用品": { icon: "🧴", color: "#64ff96" },
+  "ペット費": { icon: "🐾", color: "#d97706" },
+  "日用品": { icon: "🧴", color: "#16a34a" },
   "その他": { icon: "📦", color: "#a0a0a0" },
 };
 
@@ -197,7 +197,7 @@ async function showMonthDetail(year, month, rowEl) {
 
   const data = await fetchDetail(year, month);
   if (!data.length) {
-    area.innerHTML = `<div class="card"><div class="card-title">📋 ${year}/${month}月の明細</div><p style="color:rgba(255,255,255,0.5);text-align:center;padding:20px">データなし</p></div>`;
+    area.innerHTML = `<div class="card"><div class="card-title">📋 ${year}/${month}月の明細</div><p style="color:#6b7280;text-align:center;padding:20px">データなし</p></div>`;
     return;
   }
   const items = [...data].reverse().map(r => recentItemHtml(r)).join('');
@@ -251,41 +251,41 @@ function renderInput() {
   el.innerHTML = `
     <div class="fade-in"><div class="card">
       <div style="display:flex;gap:8px;margin-bottom:16px">
-        <button onclick="switchInputMode('expense')" style="flex:1;padding:8px;border-radius:8px;border:1px solid ${isExpense ? '#64c8ff' : 'rgba(100,200,255,0.2)'};background:${isExpense ? 'rgba(100,200,255,0.15)' : 'transparent'};color:${isExpense ? '#64c8ff' : 'rgba(255,255,255,0.5)'};font-size:13px;font-weight:bold;cursor:pointer">➖ 支出を記録</button>
-        <button onclick="switchInputMode('income')" style="flex:1;padding:8px;border-radius:8px;border:1px solid ${!isExpense ? '#64ff96' : 'rgba(100,200,255,0.2)'};background:${!isExpense ? 'rgba(100,255,150,0.12)' : 'transparent'};color:${!isExpense ? '#64ff96' : 'rgba(255,255,255,0.5)'};font-size:13px;font-weight:bold;cursor:pointer">➕ 収入を記録</button>
+        <button onclick="switchInputMode('expense')" style="flex:1;padding:8px;border-radius:8px;border:1px solid ${isExpense ? '#2563eb' : 'rgba(100,200,255,0.2)'};background:${isExpense ? 'rgba(100,200,255,0.15)' : 'transparent'};color:${isExpense ? '#2563eb' : '#9ca3af'};font-size:13px;font-weight:bold;cursor:pointer">➖ 支出を記録</button>
+        <button onclick="switchInputMode('income')" style="flex:1;padding:8px;border-radius:8px;border:1px solid ${!isExpense ? '#16a34a' : 'rgba(100,200,255,0.2)'};background:${!isExpense ? 'rgba(100,255,150,0.12)' : 'transparent'};color:${!isExpense ? '#16a34a' : '#9ca3af'};font-size:13px;font-weight:bold;cursor:pointer">➕ 収入を記録</button>
       </div>
       <div class="card-title">${isExpense ? '✏️ 支出を記録' : '💰 収入を記録'}</div>
       <div style="margin-bottom:12px">
-        <label style="font-size:11px;color:rgba(255,255,255,0.5)">日付</label><br>
-        <input type="date" id="in-date" value="${today}" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:#0f1923;color:#fff;margin-top:4px">
+        <label style="font-size:11px;color:#6b7280">日付</label><br>
+        <input type="date" id="in-date" value="${today}" style="width:100%;padding:8px;border-radius:8px;border:1px solid #d7e3f5;background:#ffffff;color:#111827;margin-top:4px">
       </div>
       <div style="margin-bottom:12px">
-        <label style="font-size:11px;color:rgba(255,255,255,0.5)">${isExpense ? '店舗名' : '振込元（会社名など・任意）'}</label><br>
-        <input type="text" id="in-shop" placeholder="${isExpense ? 'ウエルシア' : '〇〇株式会社'}" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:#0f1923;color:#fff;margin-top:4px">
+        <label style="font-size:11px;color:#6b7280">${isExpense ? '店舗名' : '振込元（会社名など・任意）'}</label><br>
+        <input type="text" id="in-shop" placeholder="${isExpense ? 'ウエルシア' : '〇〇株式会社'}" style="width:100%;padding:8px;border-radius:8px;border:1px solid #d7e3f5;background:#ffffff;color:#111827;margin-top:4px">
       </div>
       <div style="margin-bottom:12px">
-        <label style="font-size:11px;color:rgba(255,255,255,0.5)">内容（カテゴリ判定に使われます）</label><br>
-        <input type="text" id="in-content" placeholder="${isExpense ? '食品' : '給与'}" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:#0f1923;color:#fff;margin-top:4px">
+        <label style="font-size:11px;color:#6b7280">内容（カテゴリ判定に使われます）</label><br>
+        <input type="text" id="in-content" placeholder="${isExpense ? '食品' : '給与'}" style="width:100%;padding:8px;border-radius:8px;border:1px solid #d7e3f5;background:#ffffff;color:#111827;margin-top:4px">
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
           ${contentChips.map(k =>
-            `<span onclick="document.getElementById('in-content').value='${k}'" style="font-size:11px;padding:4px 10px;border-radius:12px;background:rgba(100,200,255,0.1);border:1px solid rgba(100,200,255,0.3);color:#64c8ff;cursor:pointer">${k}</span>`
+            `<span onclick="document.getElementById('in-content').value='${k}'" style="font-size:11px;padding:4px 10px;border-radius:12px;background:rgba(100,200,255,0.1);border:1px solid rgba(100,200,255,0.3);color:#2563eb;cursor:pointer">${k}</span>`
           ).join('')}
         </div>
       </div>
       <div style="margin-bottom:12px">
-        <label style="font-size:11px;color:rgba(255,255,255,0.5)">金額</label><br>
-        <input type="number" id="in-amount" placeholder="226" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:#0f1923;color:#fff;margin-top:4px">
+        <label style="font-size:11px;color:#6b7280">金額</label><br>
+        <input type="number" id="in-amount" placeholder="226" style="width:100%;padding:8px;border-radius:8px;border:1px solid #d7e3f5;background:#ffffff;color:#111827;margin-top:4px">
       </div>
       <div style="margin-bottom:16px">
-        <label style="font-size:11px;color:rgba(255,255,255,0.5)">${isExpense ? '支払い方法' : '振込先'}</label><br>
+        <label style="font-size:11px;color:#6b7280">${isExpense ? '支払い方法' : '振込先'}</label><br>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
           ${[['g','GMOあおぞら'],['n','三井住友NL'],['j','JCB S'],['s','SBI新生'],['a','あおぞら'],['y','ゆうちょ'],['ra','楽天'],['c','現金']].map(([code,label]) =>
-            `<span onclick="selectPayment('${code}')" id="pay-${code}" style="font-size:11px;padding:4px 10px;border-radius:12px;background:rgba(100,200,255,0.1);border:1px solid rgba(100,200,255,0.3);color:#64c8ff;cursor:pointer">${label}</span>`
+            `<span onclick="selectPayment('${code}')" id="pay-${code}" style="font-size:11px;padding:4px 10px;border-radius:12px;background:rgba(100,200,255,0.1);border:1px solid rgba(100,200,255,0.3);color:#2563eb;cursor:pointer">${label}</span>`
           ).join('')}
         </div>
         <input type="hidden" id="in-payment" value="">
       </div>
-      <button onclick="submitEntry()" style="width:100%;padding:12px;border-radius:8px;border:none;background:${isExpense ? '#64c8ff' : '#64ff96'};color:#0f1923;font-weight:bold;font-size:14px;cursor:pointer">記録する</button>
+      <button onclick="submitEntry()" style="width:100%;padding:12px;border-radius:8px;border:none;background:${isExpense ? '#2563eb' : '#16a34a'};color:#ffffff;font-weight:bold;font-size:14px;cursor:pointer">記録する</button>
       <div id="in-message" style="margin-top:10px;font-size:12px;text-align:center"></div>
     </div></div>`;
 }
@@ -306,7 +306,7 @@ async function submitEntry() {
   const payment = document.getElementById('in-payment').value;
 
   if (!content || !amount || !payment) {
-    msgEl.style.color = '#ff6464';
+    msgEl.style.color = '#dc2626';
     msgEl.textContent = '内容・金額・支払い方法は必須です';
     return;
   }
@@ -318,7 +318,7 @@ async function submitEntry() {
     localStorage.setItem('kakeibo_token', token);
   }
 
-  msgEl.style.color = '#64c8ff';
+  msgEl.style.color = '#2563eb';
   msgEl.textContent = '送信中...';
 
   const params = new URLSearchParams({
@@ -329,19 +329,19 @@ async function submitEntry() {
     const res = await fetch(GAS_URL, { method: 'POST', body: params });
     const json = await res.json();
     if (json.success) {
-      msgEl.style.color = '#64ff96';
+      msgEl.style.color = '#16a34a';
       msgEl.textContent = '✅ 記録しました';
       document.getElementById('in-shop').value = '';
       document.getElementById('in-content').value = '';
       document.getElementById('in-amount').value = '';
       loadAll();
     } else {
-      msgEl.style.color = '#ff6464';
+      msgEl.style.color = '#dc2626';
       msgEl.textContent = '❌ ' + (json.error || 'エラーが発生しました');
       if (json.error === '認証エラー') localStorage.removeItem('kakeibo_token');
     }
   } catch (e) {
-    msgEl.style.color = '#ff6464';
+    msgEl.style.color = '#dc2626';
     msgEl.textContent = '❌ 通信エラー';
   }
 }
@@ -415,13 +415,13 @@ function renderHome() {
         datasets: [{
           data: catEntries.map(c => c[1]),
           backgroundColor: catEntries.map(c => (CAT_ICONS[c[0]] || CAT_ICONS['その他']).color + 'cc'),
-          borderColor: '#0f1923',
+          borderColor: '#ffffff',
           borderWidth: 2,
         }]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'right', labels: { color: '#e8e8e8', font: { size: 10 }, boxWidth: 12 } } }
+        plugins: { legend: { position: 'right', labels: { color: '#374151', font: { size: 10 }, boxWidth: 12 } } }
       }
     });
   }, 100);
@@ -505,7 +505,7 @@ function renderMonthly() {
           label: '支出',
           data: amounts,
           backgroundColor: 'rgba(100,200,255,0.4)',
-          borderColor: '#64c8ff',
+          borderColor: '#2563eb',
           borderWidth: 1,
           borderRadius: 4,
         }]
@@ -514,8 +514,8 @@ function renderMonthly() {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
-          y: { ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          x: { ticks: { color: '#6b7280', font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+          y: { ticks: { color: '#6b7280', font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } }
         }
       }
     });
@@ -563,8 +563,8 @@ function renderInvest() {
             <td>${Number(r[4]).toLocaleString()}</td>
             <td>${Number(r[5]).toLocaleString()}</td>
             <td>${Number(r[6]).toLocaleString()}</td>
-            <td style="color:${Number(String(r[7]).replace(/[^0-9.-]/g,''))>=0?'#64ff96':'#ff6464'};font-weight:bold">${Number(r[7]).toLocaleString()}</td>
-            <td style="color:${Number(String(r[8]).replace(/[^0-9.%-]/g,''))>=0?'#64ff96':'#ff6464'}">${r[8]}</td>
+            <td style="color:${Number(String(r[7]).replace(/[^0-9.-]/g,''))>=0?'#16a34a':'#dc2626'};font-weight:bold">${Number(r[7]).toLocaleString()}</td>
+            <td style="color:${Number(String(r[8]).replace(/[^0-9.%-]/g,''))>=0?'#16a34a':'#dc2626'}">${r[8]}</td>
           </tr>`).join('')}
         </table>
       </div>
