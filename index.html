@@ -152,10 +152,18 @@ function switchTab(tab) {
   currentTab = tab;
   renderTab(tab);
 }
-
+function getToken() {
+  let token = localStorage.getItem('kakeibo_token');
+  if (!token) {
+    token = prompt('アクセストークンを入力してください');
+    if (token) localStorage.setItem('kakeibo_token', token);
+  }
+  return token;
+}
 function fetchDataJsonp(action) {
   return new Promise((resolve) => {
     const cbName = 'cb_' + action + '_' + Date.now();
+    const token = getToken();
     window[cbName] = (json) => {
       delete window[cbName];
       document.getElementById('jsonp-' + action)?.remove();
@@ -163,7 +171,7 @@ function fetchDataJsonp(action) {
     };
     const s = document.createElement('script');
     s.id = 'jsonp-' + action;
-    s.src = GAS_URL + '?action=' + action + '&callback=' + cbName;
+    s.src = GAS_URL + '?action=' + action + '&token=' + encodeURIComponent(token) + '&callback=' + cbName;
     s.onerror = () => { resolve([]); };
     document.body.appendChild(s);
   });
@@ -172,6 +180,7 @@ function fetchDataJsonp(action) {
 async function fetchDetail(year, month) {
   return new Promise((resolve) => {
     const cbName = 'cb_det_' + Date.now();
+    const token = getToken();
     window[cbName] = (json) => {
       delete window[cbName];
       document.getElementById('jsonp-det')?.remove();
@@ -179,7 +188,7 @@ async function fetchDetail(year, month) {
     };
     const s = document.createElement('script');
     s.id = 'jsonp-det';
-    s.src = GAS_URL + '?action=getDetail&year=' + year + '&month=' + month + '&callback=' + cbName;
+    s.src = GAS_URL + '?action=getDetail&year=' + year + '&month=' + month + '&token=' + encodeURIComponent(token) + '&callback=' + cbName;
     s.onerror = () => { resolve([]); };
     document.body.appendChild(s);
   });
@@ -311,12 +320,8 @@ async function submitEntry() {
     return;
   }
 
-  let token = localStorage.getItem('kakeibo_token');
-  if (!token) {
-    token = prompt('アクセストークンを入力してください');
-    if (!token) return;
-    localStorage.setItem('kakeibo_token', token);
-  }
+ let token = getToken();
+if (!token) return;
 
   msgEl.style.color = '#2563eb';
   msgEl.textContent = '送信中...';
