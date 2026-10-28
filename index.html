@@ -129,6 +129,7 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbzVzIk65g99LsAVPFAG5QQl
 
 let recentData = [];
 let monthlyData = [];
+let monthData = [];
 let investData = [];
 let currentTab = 'home';
 let charts = {};
@@ -225,6 +226,8 @@ async function loadAll() {
     recentData = await fetchDataJsonp('getRecent');
     monthlyData = await fetchDataJsonp('getMonthly');
     investData = await fetchDataJsonp('getInvestment');
+    const nowD = new Date();
+    monthData = await fetchDetail(nowD.getFullYear(), nowD.getMonth() + 1);
   } catch(e) {
     console.error(e);
   }
@@ -369,16 +372,12 @@ function renderHome() {
   if (!recentData.length) { el.innerHTML = '<div class="loading">データなし</div>'; return; }
 
   const now = new Date();
-  const thisMonth = recentData.filter(r => {
-    const d = new Date(r.date);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
-
+  const thisMonth = monthData;
  const totalExpense = thisMonth.filter(r => r.category !== '収入').reduce((s, r) => s + (Number(r.amount) || 0), 0);
   const totalCashback = thisMonth.reduce((s, r) => s + (Number(r.cashback) || 0), 0);
 
   const catMap = {};
-  thisMonth.forEach(r => {
+    thisMonth.filter(r => r.category !== '収入').forEach(r => {
     const cat = r.category || 'その他';
     catMap[cat] = (catMap[cat] || 0) + (Number(r.amount) || 0);
   });
